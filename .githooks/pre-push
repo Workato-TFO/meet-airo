@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+# Local mirror of the publish-guard CI gate.
+# Enable once per clone: git config core.hooksPath .githooks
+exec bash "$(git rev-parse --show-toplevel)/scripts/publish-checks.sh"
