@@ -1,7 +1,8 @@
 # meet-airo
 
-Customer-facing lab guide for "Meet AIRO: your first conversation," served
-via GitHub Pages.
+Customer-facing lab guide hub for the AIRO training course (three labs:
+Visit Playgrounds, Meet AIRO, and inheriting a project), served via GitHub
+Pages.
 
 ## Visibility contract: designed public
 
@@ -24,8 +25,8 @@ leaked: rotate any credential and involve the org admin.
 Pressed static output only (HTML from the Gutenberg press), under `docs/` —
 the GitHub Pages source folder (main branch, /docs). Source manuscripts,
 decisions records, and screenshots-in-progress live in the internal
-authoring repo. Do not edit the lab HTML in place — re-press and replace the
-whole file. This repo receives curated snapshots only: all iteration,
+authoring repo. Do not edit lab HTML in place — re-press and replace the
+whole set. This repo receives curated snapshots only: all iteration,
 discussion, and issue tracking happen in the internal authoring repo, so
 nothing internal ever accumulates in this repo's history or PR threads.
 
