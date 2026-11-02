@@ -15,14 +15,48 @@ fail=0
 # failures on legitimate content. Build a stripped scan copy once, up front,
 # replacing each data URI's payload with a short placeholder — the rest of
 # the file (real prose, real URLs, real names) stays intact for the scans.
+# Exempt the renderer's exact semantic identifiers from the language scan;
+# visible prose, alt text and accessibility labels remain subject to it.
 SCAN_DIR="$(mktemp -d)"
 trap 'rm -rf "$SCAN_DIR"' EXIT
+
+SCAN_FILTER="$(cat <<'JAVASCRIPT'
+const fs = require("node:fs");
+const source = fs.readFileSync(0, "utf8").replace(
+  /(data:[a-zA-Z0-9\/+.\-]+;base64,)[A-Za-z0-9+\/=]{100,}/g,
+  "$1[BASE64-STRIPPED]"
+);
+let rawElement = "";
+const scanned = source.replace(/<!--[\s\S]*?-->|<(?:[^"'<>]|"[^"]*"|'[^']*')*>/g, tag => {
+  if (rawElement) {
+    if (new RegExp("^</" + rawElement + "\\s*>$", "i").test(tag)) rawElement = "";
+    return tag;
+  }
+  const rawStart = /^<(script|style|textarea|title|xmp|noembed|noframes)\b/i.exec(tag);
+  if (rawStart) {
+    rawElement = rawStart[1];
+    return tag;
+  }
+  if (!/^<[a-z][\w:-]*\b/i.test(tag)) return tag;
+  return tag.replace(/(\s+)([^\s"'=<>/]+)(\s*=\s*)(["'])([\s\S]*?)\4/g,
+    (attribute, space, name, equals, quote, value) => {
+      if (name.toLowerCase() === "class") {
+        value = value.replace(/(^|\s)semantic-layout--hands-on-activity(?=\s|$)/g, "$1semantic-layout--activity");
+      } else if (name.toLowerCase() === "data-semantic-class" && value === "hands-on-activity") {
+        value = "activity";
+      }
+      return space + name + equals + quote + value + quote;
+    });
+});
+process.stdout.write(scanned);
+JAVASCRIPT
+)"
 
 while IFS= read -r -d '' f; do
   mkdir -p "$SCAN_DIR/$(dirname "$f")"
   git show ":$f" 2>/dev/null \
-    | perl -pe 's/(data:[a-zA-Z0-9\/+.\-]+;base64,)[A-Za-z0-9+\/=]{100,}/$1[BASE64-STRIPPED]/g' \
-    > "$SCAN_DIR/$f" 2>/dev/null || true
+    | node --max-old-space-size=256 -e "$SCAN_FILTER" \
+    > "$SCAN_DIR/$f"
 done < <(git ls-files -z)
 
 scan() {
